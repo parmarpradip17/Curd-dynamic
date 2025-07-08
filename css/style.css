@@ -1,0 +1,163 @@
+/* General page layout */
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background-color: #f5f6fa;
+    margin: 0;
+    padding: 0;
+}
+
+/* Header */
+.header {
+    background: #007bff;
+    padding: 20px 0;
+    text-align: center;
+}
+
+.header h2 {
+    color: #fff;
+    margin: 0;
+    font-size: 28px;
+}
+
+/* Form Section */
+.form-curd {
+    padding: 30px 0;
+}
+
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: auto;
+}
+
+.form {
+    background: #fff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+form#stud_form {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Form Groups */
+.form-group {
+    margin-bottom: 15px;
+    width: 48%;
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.form-control {
+    padding: 12px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    outline: none;
+    transition: 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+}
+
+/* Radio Buttons */
+.radio-btn {
+    display: flex;
+    gap: 30px;
+}
+
+.radio-btn label {
+    font-weight: 500;
+    cursor: pointer;
+}
+
+/* Select Dropdown */
+select.form-control {
+    appearance: none;
+    background: #fff;
+}
+
+/* Profile Photo Upload */
+.profile-img {
+    margin-top: 15px;
+}
+
+.profile-img label {
+    font-weight: 600;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.profile-img input[type="file"] {
+    padding: 6px;
+}
+
+/* Profile Image Preview */
+.img-show {
+    margin-top: 15px;
+}
+
+.img-show img {
+    width: 120px;
+    height: 120px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 2px solid #ddd;
+    padding: 3px;
+    background-color: #f9f9f9;
+}
+
+/* Submit Button */
+.sub-btn {
+    text-align: center;
+    margin-top: 25px;
+}
+
+.sub-btn button {
+    padding: 12px 30px;
+    font-size: 18px;
+    border: none;
+    border-radius: 8px;
+    background: #28a745;
+    color: #fff;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.sub-btn button:hover {
+    background: #218838;
+}
+
+/* Error Messages */
+.error-messages {
+    margin-bottom: 20px;
+}
+
+.alert {
+    padding: 12px 18px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    font-size: 15px;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #842029;
+}
+
+.alert-success {
+    background-color: #d1e7dd;
+    color: #0f5132;
+}
