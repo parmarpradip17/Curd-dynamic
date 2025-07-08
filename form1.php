@@ -1,175 +1,226 @@
 <?php
+session_start();
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
+
+$success = '';
+$error = '';
 $isEdit = false;
-$errors = $_SESSION['errors'] ?? [];
-$oldInput = $_SESSION['old_input'] ?? [];
-unset($_SESSION['errors']);
-unset($_SESSION['old_input']);
-
-// Set default values or values from old input
-$fname = $oldInput['fname'] ?? '';
-$lname = $oldInput['lname'] ?? '';
-$email = $oldInput['email'] ?? '';
-$phone = $oldInput['phone'] ?? '';
-$gender = $oldInput['gender'] ?? '';
-$address1 = $oldInput['add1'] ?? '';
-$address2 = $oldInput['add2'] ?? '';
-$city = $oldInput['city'] ?? '';
-$state = $oldInput['state'] ?? '';
-$country = $oldInput['country'] ?? '';
-$zip = $oldInput['zip'] ?? '';
-$qualification = $oldInput['quali'] ?? '';
-$profile_photo = $oldInput['profile_photo'] ?? '';
+$id = '';
+$fname = '';
+$lname = '';
+$email = '';
+$phone = '';
+$gender = '';
+$address1 = '';
+$address2 = '';
+$city = '';
+$state = '';
+$country = '';
+$zip = '';
+$qualification = '';
 
 
-
-if (isset($_SESSION['error'])) {
-    echo "<div class='alert alert-danger'>{$_SESSION['error']}</div>";
-    unset($_SESSION['error']);
+$conn = new mysqli("localhost", "root", "", "info_stud");
+if ($conn->connect_error) {
+    echo "<div class='alert alert-danger'>Database connection failed.</div>";
+    exit;
 }
 
-if (isset($_SESSION['success'])) {
-    echo "<div class='alert alert-success'>{$_SESSION['success']}</div>";
-    unset($_SESSION['success']);
+
+if (isset($_GET['id'])) {
+    $isEdit = true;
+    $id = (int)$_GET['id'];
+
+    $stmt = $conn->prepare("SELECT * FROM students WHERE id = ?");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows === 1) {
+        $row = $result->fetch_assoc();
+
+        $fname = $row['fname'];
+        $lname = $row['lname'];
+        $email = $row['email'];
+        $phone = $row['phone'];
+        $gender = $row['gender'];
+        $address1 = $row['address1'];
+        $address2 = $row['address2'];
+        $city = $row['city'];
+        $state = $row['state'];
+        $country = $row['country'];
+        $zip = $row['zip'];
+        $qualification = $row['qualification'];
+        $profile_photo = $row['profile_photo'];
+    } else {
+        die("Student not found.");
+    }
+    $stmt->close();
 }
+
+
+
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
-    <title>CURD Operation</title>
+    <title>CRUD Operation</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="./css/style.css">
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
 </head>
 
-<body>
-    <header class="header" id="header">
-        <div class="container">
-            <div class="header-txt" id="header-txt">
-                <h2>CURD Operation</h2>
-            </div>
-        </div>
-    </header>
-    <div id="form-response"></div>
+<body class="bg-light">
 
-    <section class="form-curd">
+    <header class="bg-primary py-3 text-white text-center">
+        <h2>CRUD Operation <?= $isEdit ? '(Edit)' : '(Add)' ?></h2>
+    </header>
+
+    <section class="py-5">
         <div class="container">
-            <?php if (!empty($errors)): ?>
-                <div class="error-messages">
-                    <?php foreach ($errors as $error): ?>
-                        <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
-                    <?php endforeach; ?>
-                </div>
+
+            <div id="ajax-message"></div>
+
+            <?php if (!empty($success)) : ?>
+                <div class="alert alert-success"><?= $success ?></div>
             <?php endif; ?>
 
-            <div class="form">
-                <form id="stud_form" method="POST" role="form" enctype="multipart/form-data" novalidate>
-                    <div class="form-group">
-                        <label for="fname">First Name</label>
-                        <input type="text" name="fname" class="form-control validation" id="fname" value="<?= htmlspecialchars($fname) ?>" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="lname">Last Name</label>
-                        <input type="text" name="lname" class="form-control validation" id="lname" value="<?= htmlspecialchars($lname) ?>" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="email">Email</label>
-                        <input type="email" name="email" class="form-control validation" id="email" value="<?= htmlspecialchars($email) ?>" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="phone">Phone</label>
-                        <input type="tel" name="phone" class="form-control validation" maxlength="10" id="phone" value="<?= htmlspecialchars($phone) ?>" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="gender">Gender</label>
-                        <div class="radio-btn">
-                            <span id="Male">
-                                <label>
-                                    <input type="radio" name="gender" class="form-control validation" id="male" value="Male" <?= ($gender == 'Male') ? 'checked' : '' ?> required>
-                                    Male
-                                </label>
-                            </span>
-                            <span id="Female">
-                                <label>
-                                    <input type="radio" name="gender" class="form-control validation" id="female" value="Female" <?= ($gender == 'Female') ? 'checked' : '' ?> required>
-                                    Female
-                                </label>
-                            </span>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="add1">Address1</label>
-                        <input type="text" name="add1" class="form-control validation" id="add1" value="<?= htmlspecialchars($address1) ?>" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="add2">Address2</label>
-                        <input type="text" name="add2" class="form-control" id="add2" value="<?= htmlspecialchars($address2) ?>">
-                    </div>
-                    <div class="form-group">
-                        <label for="city">City</label>
-                        <input type="text" name="city" class="form-control validation" id="city" value="<?= htmlspecialchars($city) ?>" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="state">State</label>
-                        <input type="text" name="state" class="form-control validation" id="state" value="<?= htmlspecialchars($state) ?>" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="country">Country</label>
-                        <select name="country" id="country" class="form-control validation" required>
-                            <option value="" disabled <?= (empty($country)) ? 'selected' : '' ?>>Select your country</option>
-                            <option value="USA" <?= $country == 'USA' ? 'selected' : '' ?>>United States</option>
-                            <option value="India" <?= $country == 'India' ? 'selected' : '' ?>>India</option>
-                            <option value="Canada" <?= $country == 'Canada' ? 'selected' : '' ?>>Canada</option>
-                            <option value="Australia" <?= $country == 'Australia' ? 'selected' : '' ?>>Australia</option>
-                            <option value="Germany" <?= $country == 'Germany' ? 'selected' : '' ?>>Germany</option>
-                            <option value="Japan" <?= $country == 'Japan' ? 'selected' : '' ?>>Japan</option>
-                            <option value="Brazil" <?= $country == 'Brazil' ? 'selected' : '' ?>>Brazil</option>
-                            <option value="France" <?= $country == 'France' ? 'selected' : '' ?>>France</option>
-                            <option value="South Africa" <?= $country == 'South Africa' ? 'selected' : '' ?>>South Africa</option>
-                            <option value="United Kingdom" <?= $country == 'United Kingdom' ? 'selected' : '' ?>>United Kingdom</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="zip">ZIP</label>
-                        <input type="text" name="zip" maxlength="6" class="form-control validation" id="zip" value="<?= htmlspecialchars($zip) ?>" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="quali">Qualification</label>
-                        <select name="quali" id="quali" class="form-control validation" required>
-                            <option value="" disabled <?= (empty($qualification)) ? 'selected' : '' ?>>Select your qualification</option>
-                            <option value="MCA" <?= $qualification == 'MCA' ? 'selected' : '' ?>>MCA</option>
-                            <option value="MBA" <?= $qualification == 'MBA' ? 'selected' : '' ?>>MBA</option>
-                            <option value="BCA" <?= $qualification == 'BCA' ? 'selected' : '' ?>>BCA</option>
-                            <option value="B.Com" <?= $qualification == 'B.Com' ? 'selected' : '' ?>>B.Com</option>
-                            <option value="BBA" <?= $qualification == 'BBA' ? 'selected' : '' ?>>BBA</option>
-                            <option value="BA" <?= $qualification == 'BA' ? 'selected' : '' ?>>B.A</option>
-                            <option value="MA" <?= $qualification == 'MA' ? 'selected' : '' ?>>M.A</option>
-                            <option value="PhD" <?= $qualification == 'PhD' ? 'selected' : '' ?>>Ph.D</option>
-                        </select>
-                    </div>
-                    <div class="profile-img ">
-                        <label for="profile">profile photo</label>
-                        <input type="file" name="profile">
-                    </div>
-                    <?php if ($isEdit && !empty($profile_photo)): ?>
-                        <div class="img-show">
-                            <img src="<?= $profile_photo ?>" alt="Profile Photo" style="width: 100px; height: 100px;">
-                        </div>
-                    <?php endif; ?>
+            <?php if (!empty($error)) : ?>
+                <div class="alert alert-danger"><?= $error ?></div>
+            <?php endif; ?>
 
+            <form id="stud_form" class="needs-validation fx-width" method="POST" enctype="multipart/form-data" novalidate>
+                <input type="hidden" id="form-action" value="<?= $isEdit ? 'update_student.php' : 'insert_student.php' ?>">
+                <?php if ($isEdit) : ?>
+                    <input type="hidden" name="id" value="<?= $id ?>">
+                <?php endif; ?>
 
-                    <div class="sub-btn">
-                        <button type="submit" class="btn btn-primary">Submit</button>
+                <div class="mb-3 fx-width">
+                    <label for="fname" class="form-label">First Name</label>
+                    <input type="text" name="fname" class="form-control" id="fname" value="<?= htmlspecialchars($fname) ?>" required>
+                    <div class="invalid-feedback">First name is required.</div>
+                </div>
+
+                <div class="mb-3 fx-width">
+                    <label for="lname" class="form-label">Last Name</label>
+                    <input type="text" name="lname" class="form-control" id="lname" value="<?= htmlspecialchars($lname) ?>" required>
+                    <div class="invalid-feedback">Last name is required.</div>
+                </div>
+
+                <div class="mb-3 fx-width">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" name="email" class="form-control" id="email" value="<?= htmlspecialchars($email) ?>" required>
+                    <div class="invalid-feedback">Please enter a valid email address.</div>
+                </div>
+
+                <div class="mb-3 fx-width">
+                    <label for="phone" class="form-label">Phone</label>
+                    <input type="tel" name="phone" class="form-control" id="phone" value="<?= htmlspecialchars($phone) ?>" maxlength="10" required>
+                    <div class="invalid-feedback">Phone is required.</div>
+                </div>
+
+                <div class="mb-3 fx-width">
+                    <label class="form-label">Gender</label><br>
+                    <div class="form-check form-check-inline">
+                        <input type="radio" name="gender" class="form-check-input" id="male" value="Male" <?= ($gender == 'Male') ? 'checked' : '' ?> required>
+                        <label class="form-check-label" for="male">Male</label>
                     </div>
-                    <div id="form-response"></div>
-                </form>
-            </div>
+                    <div class="form-check form-check-inline">
+                        <input type="radio" name="gender" class="form-check-input" id="female" value="Female" <?= ($gender == 'Female') ? 'checked' : '' ?> required>
+                        <label class="form-check-label" for="female">Female</label>
+                    </div>
+                </div>
+
+                <div class="mb-3 fx-width">
+                    <label for="add1" class="form-label">Address 1</label>
+                    <input type="text" name="add1" class="form-control" id="add1" value="<?= htmlspecialchars($address1) ?>" required>
+                    <div class="invalid-feedback">Address 1 is required.</div>
+                </div>
+
+                <div class="mb-3 fx-width">
+                    <label for="add2" class="form-label">Address 2</label>
+                    <input type="text" name="add2" class="form-control" id="add2" value="<?= htmlspecialchars($address2) ?>">
+                </div>
+
+                <div class="mb-3 fx-width">
+                    <label for="city" class="form-label">City</label>
+                    <input type="text" name="city" class="form-control" id="city" value="<?= htmlspecialchars($city) ?>" required>
+                    <div class="invalid-feedback">City is required.</div>
+                </div>
+
+                <div class="mb-3 fx-width">
+                    <label for="state" class="form-label">State</label>
+                    <input type="text" name="state" class="form-control" id="state" value="<?= htmlspecialchars($state) ?>" required>
+                    <div class="invalid-feedback">State is required.</div>
+                </div>
+
+                <div class="mb-3 fx-width">
+                    <label for="country" class="form-label">Country</label>
+                    <select name="country" id="country" class="form-select" required>
+                        <option value="" disabled <?= (empty($country)) ? 'selected' : '' ?>>Select country</option>
+                        <?php foreach (['USA', 'India', 'Canada', 'Australia'] as $c) : ?>
+                            <option value="<?= $c ?>" <?= $country == $c ? 'selected' : '' ?>><?= $c ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <div class="invalid-feedback">Country is required.</div>
+                </div>
+
+                <div class="mb-3 fx-width">
+                    <label for="zip" class="form-label">ZIP</label>
+                    <input type="text" name="zip" maxlength="6" class="form-control" id="zip" value="<?= htmlspecialchars($zip) ?>" required>
+                    <div class="invalid-feedback">ZIP is required.</div>
+                </div>
+
+                <div class="mb-3 fx-width">
+                    <label for="quali" class="form-label">Qualification</label>
+                    <select name="quali" id="quali" class="form-select" required>
+                        <option value="" disabled <?= (empty($qualification)) ? 'selected' : '' ?>>Select qualification</option>
+                        <?php foreach (['MCA', 'MBA', 'BCA'] as $q) : ?>
+                            <option value="<?= $q ?>" <?= $qualification == $q ? 'selected' : '' ?>><?= $q ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <div class="invalid-feedback">Qualification is required.</div>
+                </div>
+
+                <div class="mb-3 d-flex w-100 h-auto">
+                    <label for="profile" class="form-label w-25">Profile Photo</label>
+                    <input type="file" name="profile" class="form-control w-50">
+                    <div class="img-show w-25"></div>
+                </div>
+
+                <?php if ($isEdit && !empty($profile_photo)) : ?>
+                    <div class="mb-3 fx-width">
+                        <img src="<?= $profile_photo ?>" alt="Profile" style="width:100px; height:100px;" class="rounded">
+                    </div>
+                <?php endif; ?>
+                <button type="submit" id="confirm-submit" class="btn btn-primary w-100"><?= $isEdit ? 'Update' : 'Submit' ?></button>
+            </form>
+
         </div>
-    </section>
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="./js/main.js"></script>
-    <script src="./js/form.js"></script>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="./js/form.js"></script>
+        <script src="./js/porp.js"></script>
+        <script>
+            $(document).ready(function() {
+                $('input[name="profile"]').on('change', function(e) {
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        $('.img-show').html('<img src="' + e.target.result + '" class="privew-img" alt="Profile Photo">');
+                    }
+                    reader.readAsDataURL(this.files[0]);
+                });
+            });
+        </script>
+
 </body>
 
 </html>

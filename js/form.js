@@ -1,122 +1,116 @@
 $(document).ready(function () {
-    // Form submission handler
-    $('#stud_form').on('submit', function (e) {
-        // Clear previous error states
-        $('.form-group').removeClass('has-error');
-        $('.error-message').remove();
+    let countdownInterval;
+    let submitTimeout;
+
+    $("#stud_form").on("submit", function (e) {
+        e.preventDefault();
+
+        $("#ajax-message").html('');
+        $(".error-message").remove();
+        $(".validation").removeClass('error-border');
 
         let isValid = true;
 
-        // Validate required fields
-        $('.validation').each(function () {
-            if ($(this).is(':radio')) {
-                if (!$('input[name="' + $(this).attr('name') + '"]:checked').length) {
-                    isValid = false;
-                    $(this).closest('.form-group').addClass('has-error')
-                        .append('<span class="error-message">This field is required</span>');
-                }
-            } else if ($(this).val().trim() === '') {
+        $(".validation").each(function () {
+            const $field = $(this);
+            const value = $field.val().trim();
+
+            if (!value) {
                 isValid = false;
-                $(this).closest('.form-group').addClass('has-error')
-                    .append('<span class="error-message">This field is required</span>');
+                showError($field, 'This field is required.');
+            } else if ($field.attr('type') === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+                isValid = false;
+                showError($field, 'Enter a valid email.');
+            } else if ($field.attr('id') === 'phone' && !/^\d{10}$/.test(value)) {
+                isValid = false;
+                showError($field, 'Phone must be 10 digits.');
+            } else if ($field.is('select') && $field.val() === '') {
+                isValid = false;
+                showError($field, 'Select an option.');
             }
         });
 
-        // Validate email format
-        const email = $('#email').val().trim();
-        if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        if (!$("input[name='gender']:checked").length) {
             isValid = false;
-            $('#email').closest('.form-group').addClass('has-error')
-                .append('<span class="error-message">Invalid email format</span>');
+            showError($("#male").closest('.form-group'), 'Select gender.');
         }
 
-        // Validate phone number
-        const phone = $('#phone').val().trim();
-        if (phone && !/^\d{10}$/.test(phone)) {
-            isValid = false;
-            $('#phone').closest('.form-group').addClass('has-error')
-                .append('<span class="error-message">Phone must be 10 digits</span>');
-        }
+        if (!isValid) return;
 
-        if (!isValid) {
-            e.preventDefault();
-            $('html, body').animate({
-                scrollTop: $('.has-error').first().offset().top - 100
-            }, 500);
-        }
-    });
+        let countdown = 3;
+        $("#ajax-message").html(
+            `<div class="alert alert-info">
+                Submitting in <span class="countdown">${countdown}</span> sec...
+                <button type="button" class="btn btn-sm btn-danger ms-2" id="cancel-submit">Cancel</button>
+            </div>`
+        );
 
-    // Real-time validation for phone number
-    $('#phone').on('input', function () {
-        $(this).val($(this).val().replace(/[^0-9]/g, '').substring(0, 10));
-    });
-});
+        countdownInterval = setInterval(() => {
+            countdown--;
+            $(".countdown").text(countdown);
+        }, 1000);
 
+        const $submitBtn = $(this).find('button[type="submit"]');
+        const originalText = $submitBtn.text();
+        $submitBtn.prop('disabled', true).text('Processing...');
 
-if (!isValid) {
-    e.preventDefault();
-    return;
-}
+        submitTimeout = setTimeout(() => {
+            clearInterval(countdownInterval);
+            $("#ajax-message").html('');
 
-// Check if duplicate email error is present
-if ($('.email-error').text().includes('already exists')) {
-    e.preventDefault();
-    alert("Please fix the errors before submitting.");
-    return;
-}
+            const formData = new FormData(this);
+            const actionUrl = $("#form-action").val();
 
-
-
-$('#email').on('blur', function () {
-    var email = $(this).val().trim();
-    $('.email-error').remove(); // remove previous message
-
-    if (email !== '') {
-        $.ajax({
-            url: 'check_email.php',
-            type: 'POST',
-            data: { email: email },
-            success: function (response) {
-                if (response === 'exists') {
-                    $('#email').after('<div class="email-error" style="color:red; margin-top:4px;">❌ Email already exists.</div>');
-                } else if (response === 'available') {
-                    $('#email').after('<div class="email-error" style="color:green; margin-top:4px;">✅ Email is available.</div>');
-                } else {
-                    $('#email').after('<div class="email-error" style="color:red; margin-top:4px;">Error checking email.</div>');
+            $.ajax({
+                url: actionUrl,
+                type: "POST",
+                data: formData,
+                contentType: false,
+                processData: false,
+                dataType: 'json',
+                success: function (response) {
+                    if (response.success) {
+                        $("#ajax-message").html(
+                            `<div class="alert alert-success">${response.message}</div>`
+                        );
+                        if (response.redirect) {
+                            setTimeout(() => {
+                                window.location.href = response.redirect;
+                            }, 2000);
+                        }
+                    } else {
+                        $("#ajax-message").html(
+                            `<div class="alert alert-danger">${response.message}</div>`
+                        );
+                        if (response.message.includes('email')) {
+                            $("#email").addClass('error-border');
+                        }
+                    }
+                },
+                error: function (xhr, status, error) {
+                    $("#ajax-message").html(
+                        `<div class="alert alert-danger">Error: ${error}</div>`
+                    );
+                },
+                complete: function () {
+                    $submitBtn.prop('disabled', false).text(originalText);
                 }
-            },
-            error: function () {
-                $('#email').after('<div class="email-error" style="color:red; margin-top:4px;">Error checking email.</div>');
-            }
-        });
+            });
+
+        }, 3000);
+    });
+
+    $(document).on("click", "#cancel-submit", function () {
+        clearTimeout(submitTimeout);
+        clearInterval(countdownInterval);
+        $("#ajax-message").html('');
+        $("#stud_form button[type='submit']").prop('disabled', false).text('Submit');
+    });
+
+    function showError($element, message) {
+        $('<div class="error-message" style="color:red; font-size:13px; margin-top:4px;"></div>')
+            .text(message)
+            .insertAfter($element);
+        $element.addClass('error-border');
     }
 });
-
-$(document).ready(function () {
-    $('#stud_form').on('submit', function (e) {
-        e.preventDefault();
-
-        var formData = new FormData(this);
-
-        $.ajax({
-            url: 'curd.php',
-            type: 'POST',
-            data: formData,
-            contentType: false,
-            processData: false,
-            success: function (response) {
-                $('#form-response').html(response);
-
-                // After 3 seconds, redirect to curd.php
-                setTimeout(function () {
-                    window.location.href = 'curd.php';
-                }, 3000);
-            },
-            error: function () {
-                $('#form-response').html("<div class='alert alert-danger'>Something went wrong.</div>");
-            }
-        });
-    });
-});
-
-
