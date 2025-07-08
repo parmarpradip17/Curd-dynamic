@@ -3,37 +3,55 @@ session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-
 $success = '';
 $error = '';
 $isEdit = false;
-$id = '';
-$fname = '';
-$lname = '';
-$email = '';
-$phone = '';
-$gender = '';
-$address1 = '';
-$address2 = '';
-$city = '';
-$state = '';
-$country = '';
-$zip = '';
-$qualification = '';
 
+$fname = $lname = $email = $phone = '';
+$gender = $address1 = $address2 = $city = $state = $country = $zip = '';
+$qualification = $percentage = $passing_year = $university = $Hobbies = '';
+$profile_photo = '';
 
-$conn = new mysqli("localhost", "root", "", "info_stud");
+$conn = new mysqli("localhost", "root", "", "stud_resume");
 if ($conn->connect_error) {
     echo "<div class='alert alert-danger'>Database connection failed.</div>";
     exit;
 }
 
-
-if (isset($_GET['id'])) {
-    $isEdit = true;
+// ✅ Get ID from GET
+if (isset($_GET['id']) && is_numeric($_GET['id'])) {
     $id = (int)$_GET['id'];
+    $isEdit = true;
 
-    $stmt = $conn->prepare("SELECT * FROM students WHERE id = ?");
+    $stmt = $conn->prepare("
+        SELECT 
+            sbi.fname, 
+            sbi.lname, 
+            sbi.email,
+            sbi.phone,
+            sgi.gender,
+            sgi.address1,
+            sgi.address2,
+            sgi.city,
+            sgi.state,
+            sgi.country,
+            sgi.zip,
+            sgi.photo AS profile_photo,
+            sai.percentage,
+            sai.passing_year,
+            sai.university,
+            q.qualification_name AS qualification,
+            GROUP_CONCAT(h.hobby_name SEPARATOR ', ') AS Hobbies
+        FROM stud_basic_info sbi
+        LEFT JOIN stud_gen_info sgi ON sgi.student_id = sbi.id
+        LEFT JOIN stud_academic_info sai ON sai.student_id = sbi.id
+        LEFT JOIN qualifications q ON sai.qualification_id = q.id
+        LEFT JOIN stud_hobbies sh ON sh.student_id = sbi.id
+        LEFT JOIN hobbies h ON sh.hobby_id = h.id
+        WHERE sbi.id = ?
+        GROUP BY sbi.id, sai.id
+    ");
+
     $stmt->bind_param("i", $id);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -53,14 +71,18 @@ if (isset($_GET['id'])) {
         $country = $row['country'];
         $zip = $row['zip'];
         $qualification = $row['qualification'];
+        $percentage = $row['percentage'];
+        $passing_year = $row['passing_year'];
+        $university = $row['university'];
+        $Hobbies = $row['Hobbies'];
         $profile_photo = $row['profile_photo'];
     } else {
         die("Student not found.");
     }
     $stmt->close();
+} else {
+    die("No valid student ID provided.");
 }
-
-
 
 ?>
 <!DOCTYPE html>
