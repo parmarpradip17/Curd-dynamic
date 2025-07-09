@@ -1,116 +1,152 @@
-$(document).ready(function () {
-    let countdownInterval;
-    let submitTimeout;
+// Replace these with your PHP variables if you're rendering from server:
+function setupAutocomplete(inputId, dropdownId, dataList, addContainerId, addInputId) {
+    const input = $('#' + inputId);
+    const dropdown = $('#' + dropdownId);
+    const addContainer = $('#' + addContainerId);
+    const addInput = $('#' + addInputId);
 
-    $("#stud_form").on("submit", function (e) {
-        e.preventDefault();
+    input.on('input focus', function () {
+        const term = input.val().toLowerCase().trim();
+        const matches = dataList.filter(item => item.toLowerCase().includes(term));
+        dropdown.empty();
 
-        $("#ajax-message").html('');
-        $(".error-message").remove();
-        $(".validation").removeClass('error-border');
-
-        let isValid = true;
-
-        $(".validation").each(function () {
-            const $field = $(this);
-            const value = $field.val().trim();
-
-            if (!value) {
-                isValid = false;
-                showError($field, 'This field is required.');
-            } else if ($field.attr('type') === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-                isValid = false;
-                showError($field, 'Enter a valid email.');
-            } else if ($field.attr('id') === 'phone' && !/^\d{10}$/.test(value)) {
-                isValid = false;
-                showError($field, 'Phone must be 10 digits.');
-            } else if ($field.is('select') && $field.val() === '') {
-                isValid = false;
-                showError($field, 'Select an option.');
-            }
-        });
-
-        if (!$("input[name='gender']:checked").length) {
-            isValid = false;
-            showError($("#male").closest('.form-group'), 'Select gender.');
+        if (matches.length > 0) {
+            matches.forEach(match => {
+                dropdown.append('<div>' + match + '</div>');
+            });
+            dropdown.show();
+        } else {
+            dropdown.hide();
         }
 
-        if (!isValid) return;
+        if (term === 'others') {
+            addContainer.show();
+            addInput.val('');
+        } else {
+            addContainer.hide();
+        }
+    });
 
-        let countdown = 3;
-        $("#ajax-message").html(
-            `<div class="alert alert-info">
-                Submitting in <span class="countdown">${countdown}</span> sec...
-                <button type="button" class="btn btn-sm btn-danger ms-2" id="cancel-submit">Cancel</button>
-            </div>`
-        );
+    dropdown.on('click', 'div', function () {
+        const selected = $(this).text();
+        input.val(selected);
+        dropdown.hide();
 
-        countdownInterval = setInterval(() => {
-            countdown--;
-            $(".countdown").text(countdown);
-        }, 1000);
+        if (selected.toUpperCase() === 'OTHERS') {
+            addContainer.show();
+            addInput.val('');
+        } else {
+            addContainer.hide();
+        }
+    });
 
-        const $submitBtn = $(this).find('button[type="submit"]');
-        const originalText = $submitBtn.text();
-        $submitBtn.prop('disabled', true).text('Processing...');
+    input.on('blur', function () {
+        setTimeout(() => {
+            const val = input.val().trim().toUpperCase();
+            if (val === 'OTHERS') {
+                addContainer.show();
+                addInput.val('');
+            } else {
+                addContainer.hide();
+            }
+        }, 200);
+    });
 
-        submitTimeout = setTimeout(() => {
-            clearInterval(countdownInterval);
-            $("#ajax-message").html('');
+    $(document).on('click', function (e) {
+        if (!dropdown.is(e.target) && !input.is(e.target) && !dropdown.has(e.target).length) {
+            dropdown.hide();
+        }
+    });
+}
 
-            const formData = new FormData(this);
-            const actionUrl = $("#form-action").val();
+function setupMultiSelect(inputId, dropdownId, selectedContainerId, hiddenInputId, dataList) {
+    const input = $('#' + inputId);
+    const dropdown = $('#' + dropdownId);
+    const selected = $('#' + selectedContainerId);
+    const hidden = $('#' + hiddenInputId);
+    let selectedValues = [];
 
-            $.ajax({
-                url: actionUrl,
-                type: "POST",
-                data: formData,
-                contentType: false,
-                processData: false,
-                dataType: 'json',
-                success: function (response) {
-                    if (response.success) {
-                        $("#ajax-message").html(
-                            `<div class="alert alert-success">${response.message}</div>`
-                        );
-                        if (response.redirect) {
-                            setTimeout(() => {
-                                window.location.href = response.redirect;
-                            }, 2000);
-                        }
-                    } else {
-                        $("#ajax-message").html(
-                            `<div class="alert alert-danger">${response.message}</div>`
-                        );
-                        if (response.message.includes('email')) {
-                            $("#email").addClass('error-border');
-                        }
-                    }
-                },
-                error: function (xhr, status, error) {
-                    $("#ajax-message").html(
-                        `<div class="alert alert-danger">Error: ${error}</div>`
-                    );
-                },
-                complete: function () {
-                    $submitBtn.prop('disabled', false).text(originalText);
-                }
+    input.on('input focus', function () {
+        const term = input.val().toLowerCase();
+        const matches = dataList.filter(item => item.toLowerCase().includes(term) && !selectedValues.includes(item));
+        dropdown.empty();
+
+        if (matches.length > 0) {
+            matches.forEach(match => {
+                dropdown.append('<div>' + match + '</div>');
             });
-
-        }, 3000);
+            dropdown.show();
+        } else {
+            dropdown.hide();
+        }
     });
 
-    $(document).on("click", "#cancel-submit", function () {
-        clearTimeout(submitTimeout);
-        clearInterval(countdownInterval);
-        $("#ajax-message").html('');
-        $("#stud_form button[type='submit']").prop('disabled', false).text('Submit');
+    dropdown.on('click', 'div', function () {
+        const val = $(this).text();
+        if (!selectedValues.includes(val)) {
+            selectedValues.push(val);
+            selected.append('<span class="badge bg-primary me-1">' + val + '</span>');
+            hidden.val(selectedValues.join(', '));
+        }
+        input.val('');
+        dropdown.hide();
     });
 
-    function showError($element, message) {
-        $('<div class="error-message" style="color:red; font-size:13px; margin-top:4px;"></div>')
-            .text(message)
-            .insertAfter($element);
-        $element.addClass('error-border');
-    }
+    $(document).on('click', function (e) {
+        if (!dropdown.is(e.target) && !input.is(e.target) && !dropdown.has(e.target).length) {
+            dropdown.hide();
+        }
+    });
+}
+
+function showAddOption(inputId, containerId, addInputId, buttonId, tableName) {
+    const input = $('#' + inputId);
+    const container = $('#' + containerId);
+    const addInput = $('#' + addInputId);
+    const button = $('#' + buttonId);
+
+    input.on('blur', function () {
+        setTimeout(() => {
+            const val = input.val().trim();
+            const exists = tableName === 'qualifications' ? qualifications.includes(val) : hobbies.includes(val);
+            if (val && !exists) {
+                container.show();
+                addInput.val(val);
+            } else {
+                container.hide();
+            }
+        }, 200);
+    });
+
+    button.on('click', function () {
+        const value = addInput.val().trim();
+        if (value !== '') {
+            $.post('add_extra_value.php', {
+                value: value,
+                type: tableName
+            }, function (response) {
+                alert(response.message);
+                if (response.success) {
+                    if (tableName === 'qualifications') {
+                        qualifications.push(value);
+                        $('#quali_input').val(value);
+                    } else {
+                        hobbies.push(value);
+                        $('#selected_hobbies').append('<span class="badge bg-primary me-1">' + value + '</span>');
+                        const existing = $('#hobbies_final').val();
+                        $('#hobbies_final').val(existing ? existing + ', ' + value : value);
+                    }
+                    container.hide();
+                }
+            }, 'json');
+        }
+    });
+}
+
+// Initialize on document ready
+$(document).ready(function () {
+    setupAutocomplete('quali_input', 'quali_dropdown', qualifications, 'quali_add_container', 'quali_add_input');
+    setupMultiSelect('hobbies_input', 'hobbies_dropdown', 'selected_hobbies', 'hobbies_final', hobbies);
+    showAddOption('quali_input', 'quali_add_container', 'quali_add_input', 'quali_add_btn', 'qualifications');
+    showAddOption('hobbies_input', 'hobby_add_container', 'hobby_add_input', 'hobby_add_btn', 'hobbies');
 });
