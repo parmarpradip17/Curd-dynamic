@@ -51,34 +51,7 @@ if (count($hobbiesList) === 1 && strtoupper($hobbiesList[0]) === 'OTHERS') {
     <meta charset="UTF-8">
     <title>Student Resume Form</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        .autocomplete-dropdown {
-            position: absolute;
-            z-index: 1000;
-            background: white;
-            border: 1px solid #ccc;
-            max-height: 150px;
-            overflow-y: auto;
-            width: 100%;
-        }
-
-        .autocomplete-dropdown div {
-            padding: 5px;
-            cursor: pointer;
-        }
-
-        .autocomplete-dropdown div:hover {
-            background-color: #f0f0f0;
-        }
-
-        .multi-selected span {
-            margin: 2px;
-            padding: 5px 10px;
-            background-color: #e0e0e0;
-            border-radius: 20px;
-            display: inline-block;
-        }
-    </style>
+    <link rel="stylesheet" href="./css/style.css">
 
 </head>
 
@@ -116,7 +89,7 @@ if (count($hobbiesList) === 1 && strtoupper($hobbiesList[0]) === 'OTHERS') {
                     </div>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Profile Photo</label>
+                    <label class="form-label">Resume</label>
                     <input type="file" name="profile" class="form-control">
                 </div>
                 <div class="col-md-6">

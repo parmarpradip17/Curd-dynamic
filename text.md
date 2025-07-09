@@ -74,6 +74,32 @@ CREATE TABLE stud_hobbies (
 );
 
 
+SELECT 
+    sb.id AS student_id,
+    sb.fname,
+    sb.lname,
+    sb.email,
+    sb.phone,
+    sg.gender,
+    sg.address1,
+    sg.address2,
+    sg.city,
+    sg.state,
+    sg.country,
+    sg.zip,
+    sa.percentage,
+    sa.passing_year,
+    sa.university,
+    q.qualification_name,
+    GROUP_CONCAT(h.hobby_name SEPARATOR ', ') AS hobbies
+FROM stud_basic_info sb
+LEFT JOIN stud_gen_info sg ON sb.id = sg.student_id
+LEFT JOIN stud_academic_info sa ON sb.id = sa.student_id
+LEFT JOIN qualifications q ON sa.qualification_id = q.id
+LEFT JOIN stud_hobbies sh ON sb.id = sh.student_id
+LEFT JOIN hobbies h ON sh.hobby_id = h.id
+GROUP BY sb.id;
+
 
 
 -> qualification (DYNAMIC) -> (BCA , MCA , B.COM , MCOM, B.TECH ,M.TECH , B.A , M.A , OTHERS )
@@ -99,3 +125,11 @@ IF USER CAN CLICK OTHERS THTA HE CAN SHOW INPUT FILED THAT ADD NEW qualification
 <!--* passing year -->
 <!--* university -->
 <!--* Hobbies (DYNAMIC) -->
+
+
+
+
+
+
+
+

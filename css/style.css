@@ -29,35 +29,29 @@
     box-sizing: border-box;
 }
 
-form#stud_form {
+.autocomplete-dropdown {
+    position: absolute;
+    z-index: 1000;
+    background: white;
+    border: 1px solid #ccc;
+    max-height: 150px;
+    overflow-y: auto;
     width: 100%;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
 }
 
-.mb-3.d-flex.w-100.h-auto {
-    margin: 0 auto;
-    height: 100px !important;
+.autocomplete-dropdown div {
+    padding: 5px;
+    cursor: pointer;
 }
 
-.mb-3.fx-width {
-    margin-bottom: 15px;
-    width: 48% !important;
+.autocomplete-dropdown div:hover {
+    background-color: #f0f0f0;
 }
 
-label.form-label.w-25 {
-    margin: auto;
-}
-
-input.form-control.w-50 {
-    margin: auto;
-}
-
-.privew-img {
-    width: 50%;
-    height: 100%;
-    margin: 0 auto;
-    display: block;
+.multi-selected span {
+    margin: 2px;
+    padding: 5px 10px;
+    background-color: #e0e0e0;
+    border-radius: 20px;
+    display: inline-block;
 }
